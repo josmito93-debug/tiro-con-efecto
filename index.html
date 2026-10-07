@@ -666,6 +666,10 @@ function drawKeeper() {
   }
 }
 function kickerPos() {
+  if (kickerVideoOn && kickerSheet) {
+    const u = kicker.u, xv = -1.15 + 0.50 * u, zo = -0.95 + 0.50 * u;
+    return { x: L.bx + cam.r.x * xv + cam.f.x * zo, z: cam.r.z * xv + cam.f.z * zo };
+  }
   const u = kicker.u, xv = -1.35 + 0.55 * u, zo = -1.2 + 0.65 * u;
   return { x: L.bx + cam.r.x * xv + cam.f.x * zo, z: cam.r.z * xv + cam.f.z * zo };
 }
@@ -712,10 +716,7 @@ function draw() {
   const j = wallJump(), kp = kickerPos();
   for (const w of wall) groundShadow(w.x, L.zw, 0.3);
   groundShadow(keeper.x, L.zk, 0.34);
-  const shadowPos = (kickerVideoOn && kickerSheet)
-    ? { x: ball.x0 - 0.75 * (1 - kicker.u), z: ball.z0 - 0.3 * (1 - kicker.u) }
-    : { x: kp.x, z: kp.z };
-  groundShadow(shadowPos.x, shadowPos.z, 0.32);
+  groundShadow(kp.x, kp.z, 0.32);
   if (!ball.gone && ball.z < L.D + 5) groundShadow(ball.x, ball.z, BVIS * 0.9);
 
   if (trailOn && path.length && state !== 'fly') {
@@ -744,32 +745,36 @@ function draw() {
       items.push({
         zv: p.zv,
         f: () => {
-          const cellW = 132, cellH = 155, cols = 8;
-          let fIdx = 0;
-          if (kicker.mode === 'run') {
-            const u = Math.min(1, kicker.t / 0.42);
-            fIdx = 3 + Math.floor(u * 21);
-          } else if (kicker.mode === 'kick') {
-            const u = Math.min(1, kicker.t / 0.75);
-            fIdx = 25 + Math.floor(u * 27);
-            if (fIdx > 52) fIdx = 0;
-          } else {
-            fIdx = 0;
+          try {
+            const cellW = 132, cellH = 155, cols = 8;
+            let fIdx = 0;
+            if (kicker.mode === 'run') {
+              const u = Math.min(1, kicker.t / 0.42);
+              fIdx = 3 + Math.floor(u * 21);
+            } else if (kicker.mode === 'kick') {
+              const u = Math.min(1, kicker.t / 0.75);
+              fIdx = 25 + Math.floor(u * 27);
+              if (fIdx > 52) fIdx = 0;
+            } else {
+              fIdx = 0;
+            }
+            const col = fIdx % cols;
+            const row = Math.floor(fIdx / cols);
+            const sx = col * cellW, sy = row * cellH;
+
+            const sc = (1.80 * p.s) / 142.0;
+            const pivotX = 64.0 * sc;
+            const pivotY = 147.0 * sc;
+            const dw = Math.round(cellW * sc);
+            const dh = Math.round(cellH * sc);
+            const dx = Math.round(p.x - pivotX);
+            const dy = Math.round(p.y - pivotY);
+
+            ctx.drawImage(kickerSheet, sx, sy, cellW, cellH, dx, dy, dw, dh);
+          } catch (_) {
+            const nm = kicker.mode === 'run' ? 'k_run' : kicker.mode === 'kick' ? 'k_kick' : 'k_idle';
+            sprite(nm, p.x, p.y, false);
           }
-          const col = fIdx % cols;
-          const row = Math.floor(fIdx / cols);
-          const sx = col * cellW, sy = row * cellH;
-
-          const bp = proj(ball.x0, 0, ball.z0);
-          const sc = (bp.s / 49.3) * 0.58;
-          const anchorX = 116.25 * sc;
-          const anchorY = 146.75 * sc;
-          const dw = Math.round(cellW * sc);
-          const dh = Math.round(cellH * sc);
-          const dx = Math.round(bp.x - anchorX);
-          const dy = Math.round(bp.y - anchorY);
-
-          ctx.drawImage(kickerSheet, sx, sy, cellW, cellH, dx, dy, dw, dh);
         }
       });
     } else {
