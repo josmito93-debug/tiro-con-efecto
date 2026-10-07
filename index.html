@@ -155,6 +155,7 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:0}
       <label class="chk" for="trailOn"><input type="checkbox" id="trailOn" checked> Estela de fuego</label>
       <label class="chk" for="slowOn"><input type="checkbox" id="slowOn" checked> Cámara lenta al pasar la barrera</label>
       <label class="chk" for="smoothOn"><input type="checkbox" id="smoothOn"> Giro suave del balón, en vez de tus 12 cuadros</label>
+      <label class="chk" for="kickerVideoOn"><input type="checkbox" id="kickerVideoOn" checked> Animación realista de pegada (del video)</label>
       <label class="chk" for="sndOn"><input type="checkbox" id="sndOn" checked> Sonido</label>
       <p class="note">El estadio, la barrera y el portero salen de tu boceto. El jugador y el balón, de tus hojas de sprites.</p>
     </section>
@@ -187,8 +188,8 @@ const SPOTS = [
   { x: -9, d: 21, n: 4 }, { x: 3, d: 27, n: 5 }, { x: 10, d: 25, n: 5 }, { x: -2, d: 30, n: 5 }
 ];
 
-let atlas = null, ballImg = null, BG = null, BD = null;
-let fxMult = 1, trailOn = true, slowOn = true, sndOn = true, smoothBall = false;
+let atlas = null, ballImg = null, BG = null, BD = null, kickerSheet = null;
+let fxMult = 1, trailOn = true, slowOn = true, sndOn = true, smoothBall = false, kickerVideoOn = true;
 let state = 'load', score = 0, lives = 3, level = 0, best = 0, shots = 0;
 let L = null, bgs = [null, null];
 const cam = { x: 0, z: 0, f: { x: 0, z: 1 }, r: { x: 1, z: 0 } };
@@ -711,7 +712,10 @@ function draw() {
   const j = wallJump(), kp = kickerPos();
   for (const w of wall) groundShadow(w.x, L.zw, 0.3);
   groundShadow(keeper.x, L.zk, 0.34);
-  groundShadow(kp.x, kp.z, 0.3);
+  const shadowPos = (kickerVideoOn && kickerSheet)
+    ? { x: ball.x0 - 0.75 * (1 - kicker.u), z: ball.z0 - 0.3 * (1 - kicker.u) }
+    : { x: kp.x, z: kp.z };
+  groundShadow(shadowPos.x, shadowPos.z, 0.32);
   if (!ball.gone && ball.z < L.D + 5) groundShadow(ball.x, ball.z, BVIS * 0.9);
 
   if (trailOn && path.length && state !== 'fly') {
@@ -736,9 +740,43 @@ function draw() {
   if (!ball.gone) { const p = proj(ball.x, ball.y, ball.z); if (p.zv > 1.2) items.push({ zv: p.zv - 0.06, f: () => drawBall(p) }); }
   {
     const p = proj(kp.x, 0, kp.z);
-    const nm = kicker.mode === 'run' ? 'k_run' : kicker.mode === 'kick' ? 'k_kick' : 'k_idle';
-    const bob = kicker.mode === 'run' ? -Math.round(Math.abs(Math.sin(kicker.t * 28)) * 3) : 0;
-    items.push({ zv: p.zv, f: () => sprite(nm, p.x, p.y + bob, false) });
+    if (kickerVideoOn && kickerSheet) {
+      items.push({
+        zv: p.zv,
+        f: () => {
+          const cellW = 132, cellH = 155, cols = 8;
+          let fIdx = 0;
+          if (kicker.mode === 'run') {
+            const u = Math.min(1, kicker.t / 0.42);
+            fIdx = 3 + Math.floor(u * 21);
+          } else if (kicker.mode === 'kick') {
+            const u = Math.min(1, kicker.t / 0.75);
+            fIdx = 25 + Math.floor(u * 27);
+            if (fIdx > 52) fIdx = 0;
+          } else {
+            fIdx = 0;
+          }
+          const col = fIdx % cols;
+          const row = Math.floor(fIdx / cols);
+          const sx = col * cellW, sy = row * cellH;
+
+          const bp = proj(ball.x0, 0, ball.z0);
+          const sc = (bp.s / 49.3) * 0.58;
+          const anchorX = 116.25 * sc;
+          const anchorY = 146.75 * sc;
+          const dw = Math.round(cellW * sc);
+          const dh = Math.round(cellH * sc);
+          const dx = Math.round(bp.x - anchorX);
+          const dy = Math.round(bp.y - anchorY);
+
+          ctx.drawImage(kickerSheet, sx, sy, cellW, cellH, dx, dy, dw, dh);
+        }
+      });
+    } else {
+      const nm = kicker.mode === 'run' ? 'k_run' : kicker.mode === 'kick' ? 'k_kick' : 'k_idle';
+      const bob = kicker.mode === 'run' ? -Math.round(Math.abs(Math.sin(kicker.t * 28)) * 3) : 0;
+      items.push({ zv: p.zv, f: () => sprite(nm, p.x, p.y + bob, false) });
+    }
   }
   items.sort((a, b) => b.zv - a.zv);
   for (const it of items) it.f();
@@ -768,10 +806,13 @@ function update(dt) {
   if (confetti.length) confetti = confetti.filter(c => c.y < H + 4);
   if (sparks.length) sparks = sparks.filter(s => s.life > 0);
 
+  const windupDur = (kickerVideoOn && kickerSheet) ? 0.42 : 0.2;
+  const kickDur = (kickerVideoOn && kickerSheet) ? 0.75 : 0.55;
+
   if (state === 'windup') {
-    kicker.t += dt; kicker.u = Math.min(1, kicker.t / 0.2);
-    if (kicker.t >= 0.2) { kicker.mode = 'kick'; kicker.t = 0; kicker.u = 1; const p = pending; pending = null; fire(p.tx, p.ty, p.v, p.spin); }
-  } else if (kicker.mode === 'kick') { kicker.t += dt; if (kicker.t > 0.55) kicker.mode = 'idle'; }
+    kicker.t += dt; kicker.u = Math.min(1, kicker.t / windupDur);
+    if (kicker.t >= windupDur) { kicker.mode = 'kick'; kicker.t = 0; kicker.u = 1; const p = pending; pending = null; fire(p.tx, p.ty, p.v, p.spin); }
+  } else if (kicker.mode === 'kick') { kicker.t += dt; if (kicker.t > kickDur) kicker.mode = 'idle'; }
 
   if (state === 'fly' || state === 'result') {
     let ts = 1;
@@ -891,8 +932,17 @@ async function start(data) {
   $('fx').value = Math.round(fxMult * 100); $('fxOut').textContent = Math.round(fxMult * 100) + ' %';
   $('smoothOn').checked = smoothBall;
   trailOn = $('trailOn').checked; slowOn = $('slowOn').checked; sndOn = $('sndOn').checked;
+  if ($('kickerVideoOn')) {
+    $('kickerVideoOn').checked = kickerVideoOn;
+    $('kickerVideoOn').addEventListener('change', e => { kickerVideoOn = e.target.checked; });
+  }
   $('portrait').src = A.portrait;
   fit();
+  try {
+    kickerSheet = await loadImg('pegada_spritesheet.png');
+  } catch (_) {
+    kickerSheet = null;
+  }
   const ims = await Promise.all([loadImg(A.atlas), loadImg(A.ball), loadImg(A.bg), loadImg(A.boards)]);
   atlas = ims[0]; ballImg = ims[1]; BG = pixels(ims[2]); BD = pixels(ims[3]);
   setupLevel(level);

@@ -16,6 +16,11 @@ Videojuego retro pixel art de tiros libres en HTML5 Canvas con simulación de ef
 
 ## ✨ Características
 
+- **Animación realista de pegada (`pegada.mp4`):** Extracción frame a frame de la animación del pateador con fondo magenta eliminado (chroma key limpio con despill y canal alfa), aislando completamente al personaje e ignorando el balón para que el motor físico simule la trayectoria de forma dinámica.
+- **Formatos de animación exportados:**
+  - `pegada_spritesheet.png`: Spritesheet de 53 fotogramas con transparencia para el motor del juego.
+  - `pegada_transparent.webm`: Video WebM con códec VP9 y canal alfa (`yuva420p`).
+  - `pegada_animada.gif`: Vista previa en GIF animado transparente.
 - **Intro cinemática interactiva (`gameintro.mp4`):** Secuencia de apertura retro con banda sonora, control de audio y opción para saltar o repetir en cualquier momento.
 - **Gráficos retro pixel art:** Perspectiva pseudo-3D inspirada en arcades clásicos de fútbol.
 - **Física de efecto Magnus:** Simulación de rotación y trayectoria del balón en tiempo real.
@@ -28,6 +33,7 @@ Videojuego retro pixel art de tiros libres en HTML5 Canvas con simulación de ef
   - Tiempo de vuelo
 - **Ajustes de prototipo en tiempo real:**
   - Regulador de fuerza del efecto (0% a 200%)
+  - Animación realista de pegada (del video) / Sprite clásico
   - Estela de fuego
   - Cámara lenta al pasar la barrera
   - Giro suave del balón
