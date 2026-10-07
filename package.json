@@ -1,0 +1,19 @@
+{
+  "name": "tiro-con-efecto",
+  "version": "1.0.0",
+  "description": "Videojuego retro pixel art de tiros libres con física de curva y efecto Magnus.",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "game",
+    "pixel-art",
+    "football",
+    "canvas",
+    "free-kick",
+    "physics"
+  ],
+  "author": "josmito93-debug",
+  "license": "MIT"
+}
