@@ -2,7 +2,9 @@
 
 Videojuego retro pixel art de tiros libres en HTML5 Canvas con simulación de efecto y física de curva. Dibuja la curva con el dedo o el ratón y el balón la seguirá según la velocidad y curvatura del trazo.
 
-![Tiro con Efecto](https://raw.githubusercontent.com/josmito93-debug/tiro-con-efecto/main/index.html)
+**[🎮 Jugar en vivo en Vercel](https://tiro-con-efecto.vercel.app)** · **[📦 Repositorio en GitHub](https://github.com/josmito93-debug/tiro-con-efecto)**
+
+---
 
 ## 🎮 Cómo se juega
 
@@ -14,6 +16,7 @@ Videojuego retro pixel art de tiros libres en HTML5 Canvas con simulación de ef
 
 ## ✨ Características
 
+- **Intro cinemática interactiva (`gameintro.mp4`):** Secuencia de apertura retro con banda sonora, control de audio y opción para saltar o repetir en cualquier momento.
 - **Gráficos retro pixel art:** Perspectiva pseudo-3D inspirada en arcades clásicos de fútbol.
 - **Física de efecto Magnus:** Simulación de rotación y trayectoria del balón en tiempo real.
 - **IA de portero y barrera:** Saltos sincronizados de la barrera y estiradas defensivas del arquero.
@@ -32,7 +35,9 @@ Videojuego retro pixel art de tiros libres en HTML5 Canvas con simulación de ef
 
 ## 🚀 Despliegue en Vercel
 
-El proyecto está configurado como una aplicación estática ligera sin dependencias de compilación requeridas, compatible de inmediato con Vercel.
+El proyecto está configurado como una aplicación estática ligera sin dependencias de compilación requeridas, alojado y desplegado de forma continua en Vercel.
+
+- **URL de Producción:** [https://tiro-con-efecto.vercel.app](https://tiro-con-efecto.vercel.app)
 
 ```bash
 # Probar localmente

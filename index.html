@@ -59,7 +59,19 @@ button{font:inherit}
 .btn{font-family:var(--font-display);font-size:26px;line-height:1;padding:10px 18px 9px;border:0;background:var(--gold);color:#1a1400;cursor:pointer;box-shadow:4px 4px 0 #000}
 .btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #000}
 :focus-visible{outline:3px solid var(--accent);outline-offset:3px}
-@media (max-width:560px){ .tag span{display:none} .segs{width:26cqw} }
+.btn-intro-header{margin-left:auto;font-family:var(--font-display);font-size:22px;background:var(--panel);color:var(--gold);border:2px solid var(--panel-edge);padding:6px 14px 4px;cursor:pointer;box-shadow:3px 3px 0 var(--panel-edge);align-self:center}
+.btn-intro-header:hover{background:var(--gold);color:#1a1400}
+.btn-intro-header:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--panel-edge)}
+.intro-overlay{position:absolute;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:30;opacity:1;transition:opacity .35s ease}
+.intro-overlay.hidden{opacity:0;pointer-events:none}
+.intro-overlay video{width:100%;height:100%;object-fit:cover;display:block}
+.intro-hud{position:absolute;bottom:3%;left:3%;right:3%;display:flex;justify-content:space-between;align-items:center;gap:8px;pointer-events:none;z-index:32}
+.intro-chip{pointer-events:auto;font-family:var(--font-display);font-size:clamp(12px,3cqw,24px);line-height:1;padding:.4cqw 1.2cqw;background:rgba(11,13,36,.88);color:var(--chalk);border:.3cqw solid var(--panel-edge);box-shadow:2px 2px 0 #000;cursor:pointer}
+.intro-chip:hover{background:var(--gold);color:#1a1400}
+.intro-chip:active{transform:translate(1px,1px)}
+.intro-skip{background:var(--gold);color:#1a1400;border-color:#5a2a00;font-weight:600}
+.intro-skip:hover{background:#fff;color:#000}
+@media (max-width:560px){ .tag span{display:none} .segs{width:26cqw} .btn-intro-header{width:100%;margin-left:0} }
 
 .side{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 28px}
 .side section{padding-block:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;min-width:0}
@@ -80,13 +92,23 @@ input[type=range]{width:100%;accent-color:var(--accent);margin:0}
 
 <div class="wrap">
   <header class="top">
-    <h1>Tiro con Efecto</h1>
-    <p>Tiros libres con tus gráficos. Dibuja la curva con el dedo o el mouse y el balón la sigue.</p>
+    <div>
+      <h1>Tiro con Efecto</h1>
+      <p>Tiros libres con tus gráficos. Dibuja la curva con el dedo o el mouse y el balón la sigue.</p>
+    </div>
+    <button type="button" class="btn-intro-header" id="btnHeaderIntro">🎬 Ver Intro</button>
   </header>
 
   <div class="game" id="game">
     <div class="stage" id="stage">
       <canvas id="cv" width="480" height="270" aria-label="Estadio de noche visto desde atrás del pateador, con la barrera y la portería al fondo"></canvas>
+      <div class="intro-overlay" id="introOverlay">
+        <video id="introVideo" src="gameintro.mp4" playsinline preload="auto" autoplay muted></video>
+        <div class="intro-hud">
+          <button type="button" class="intro-chip" id="introSoundBtn">🔊 ACTIVAR SONIDO</button>
+          <button type="button" class="intro-chip intro-skip" id="introSkipBtn">SALTAR INTRO ⏭</button>
+        </div>
+      </div>
       <div class="hud hud-top">
         <div class="sb"><span class="pts">PUNTOS <b id="hudScore">0</b></span><span class="lvl">TIRO <b id="hudShot">1</b> · <b id="hudDist">20 m</b></span></div>
         <div class="lives" id="hudLives">BALONES <i></i><i></i><i></i></div>
@@ -811,6 +833,52 @@ function fit() {
   stage.style.width = cssW + 'px';
 }
 window.addEventListener('resize', fit);
+
+const introOverlay = $('introOverlay');
+const introVideo = $('introVideo');
+const introSoundBtn = $('introSoundBtn');
+const introSkipBtn = $('introSkipBtn');
+const btnHeaderIntro = $('btnHeaderIntro');
+
+function closeIntro() {
+  if (!introOverlay) return;
+  if (introVideo) introVideo.pause();
+  introOverlay.classList.add('hidden');
+  setTimeout(() => { introOverlay.hidden = true; }, 360);
+}
+
+function openIntro(unmute = true) {
+  if (!introOverlay || !introVideo) return;
+  introOverlay.hidden = false;
+  introOverlay.classList.remove('hidden');
+  introVideo.currentTime = 0;
+  if (unmute) {
+    introVideo.muted = false;
+    if (introSoundBtn) introSoundBtn.textContent = '🔇 SILENCIAR';
+  } else {
+    introVideo.muted = true;
+    if (introSoundBtn) introSoundBtn.textContent = '🔊 ACTIVAR SONIDO';
+  }
+  const p = introVideo.play();
+  if (p && p.catch) {
+    p.catch(() => {
+      introVideo.muted = true;
+      if (introSoundBtn) introSoundBtn.textContent = '🔊 ACTIVAR SONIDO';
+      introVideo.play().catch(() => {});
+    });
+  }
+}
+
+if (introVideo) introVideo.addEventListener('ended', closeIntro);
+if (introSkipBtn) introSkipBtn.addEventListener('click', closeIntro);
+if (introSoundBtn && introVideo) {
+  introSoundBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    introVideo.muted = !introVideo.muted;
+    introSoundBtn.textContent = introVideo.muted ? '🔊 ACTIVAR SONIDO' : '🔇 SILENCIAR';
+  });
+}
+if (btnHeaderIntro) btnHeaderIntro.addEventListener('click', () => openIntro(true));
 
 function loadImg(src) { return new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = src; }); }
 function pixels(im) {
